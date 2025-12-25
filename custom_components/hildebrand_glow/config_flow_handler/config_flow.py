@@ -27,7 +27,9 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 
 if TYPE_CHECKING:
-    from custom_components.hildebrand_glow.config_flow_handler.options_flow import HildebrandGlowEnergyMonitorOptionsFlow
+    from custom_components.hildebrand_glow.config_flow_handler.options_flow import (
+        HildebrandGlowEnergyMonitorOptionsFlow,
+    )
 
 # Map exception types to error keys for user-facing messages
 ERROR_MAP = {

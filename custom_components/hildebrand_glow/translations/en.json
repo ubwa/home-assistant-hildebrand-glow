@@ -70,59 +70,53 @@
   },
   "entity": {
     "sensor": {
-      "air_quality_index": {
-        "name": "Air Quality Index"
+      "electricity_usage_today": {
+        "name": "Electricity Usage Today"
       },
-      "pm25": {
-        "name": "PM2.5"
+      "electricity_usage_week": {
+        "name": "Electricity Usage This Week"
       },
-      "filter_life": {
-        "name": "Filter Life Remaining"
+      "electricity_usage_month": {
+        "name": "Electricity Usage This Month"
       },
-      "runtime": {
-        "name": "Total Runtime"
-      }
-    },
-    "binary_sensor": {
-      "api_connectivity": {
-        "name": "API Connection"
+      "electricity_cost_today": {
+        "name": "Electricity Cost Today"
       },
-      "filter_replacement": {
-        "name": "Filter Replacement Needed"
-      }
-    },
-    "switch": {
-      "child_lock": {
-        "name": "Child Lock"
+      "electricity_cost_week": {
+        "name": "Electricity Cost This Week"
       },
-      "led_display": {
-        "name": "LED Display"
-      }
-    },
-    "select": {
-      "fan_speed": {
-        "name": "Fan Speed",
-        "state": {
-          "low": "Low",
-          "medium": "Medium",
-          "high": "High",
-          "auto": "Auto"
-        }
-      }
-    },
-    "number": {
-      "target_humidity": {
-        "name": "Target Humidity"
-      }
-    },
-    "button": {
-      "reset_filter": {
-        "name": "Reset Filter Timer"
-      }
-    },
-    "fan": {
-      "air_purifier": {
-        "name": "Air Purifier"
+      "electricity_cost_month": {
+        "name": "Electricity Cost This Month"
+      },
+      "electricity_rate": {
+        "name": "Electricity Rate"
+      },
+      "electricity_standing_charge": {
+        "name": "Electricity Standing Charge"
+      },
+      "gas_usage_today": {
+        "name": "Gas Usage Today"
+      },
+      "gas_usage_week": {
+        "name": "Gas Usage This Week"
+      },
+      "gas_usage_month": {
+        "name": "Gas Usage This Month"
+      },
+      "gas_cost_today": {
+        "name": "Gas Cost Today"
+      },
+      "gas_cost_week": {
+        "name": "Gas Cost This Week"
+      },
+      "gas_cost_month": {
+        "name": "Gas Cost This Month"
+      },
+      "gas_rate": {
+        "name": "Gas Rate"
+      },
+      "gas_standing_charge": {
+        "name": "Gas Standing Charge"
       }
     }
   },

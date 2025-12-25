@@ -22,12 +22,15 @@ if TYPE_CHECKING:
 
 async def validate_credentials(hass: HomeAssistant, username: str, password: str) -> None:
     """
-    Validate user credentials by testing API connection.
+    Validate user credentials by testing API authentication.
+
+    This authenticates against the Glowmarkt API to verify the credentials
+    are valid before storing them in the config entry.
 
     Args:
         hass: Home Assistant instance.
-        username: The username to validate.
-        password: The password to validate.
+        username: The username (email) for Glowmarkt account.
+        password: The password for Glowmarkt account.
 
     Raises:
         HildebrandGlowEnergyMonitorApiClientAuthenticationError: If credentials are invalid.
@@ -40,7 +43,8 @@ async def validate_credentials(hass: HomeAssistant, username: str, password: str
         password=password,
         session=async_create_clientsession(hass),
     )
-    await client.async_get_data()  # May raise authentication/communication errors
+    # Authenticate to verify credentials are valid
+    await client.async_authenticate()
 
 
 __all__ = [

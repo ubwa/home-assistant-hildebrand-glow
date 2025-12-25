@@ -38,13 +38,7 @@ if TYPE_CHECKING:
     from .data import HildebrandGlowEnergyMonitorConfigEntry
 
 PLATFORMS: list[Platform] = [
-    Platform.BINARY_SENSOR,
-    Platform.BUTTON,
-    Platform.FAN,
-    Platform.NUMBER,
-    Platform.SELECT,
     Platform.SENSOR,
-    Platform.SWITCH,
 ]
 
 # This integration is configured via config entries only
@@ -125,7 +119,7 @@ async def async_setup_entry(
         logger=LOGGER,
         name=DOMAIN,
         config_entry=entry,
-        update_interval=timedelta(hours=1),
+        update_interval=timedelta(minutes=5),  # Poll every 5 minutes for energy data
         always_update=False,  # Only update entities when data actually changes
     )
 

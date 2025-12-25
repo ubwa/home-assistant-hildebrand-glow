@@ -1,0 +1,13 @@
+{
+  "domain": "hildebrand_glow",
+  "name": "Hildebrand Glow Energy Monitor",
+  "codeowners": [
+    "@ubwa"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/ubwa/home-assistant-hildebrand-glow",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ubwa/home-assistant-hildebrand-glow/issues",
+  "version": "0.1.0"
+}

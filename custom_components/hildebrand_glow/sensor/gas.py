@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from custom_components.hildebrand_glow.entity import HildebrandGlowEnergyMonitorEntity
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
-from homeassistant.const import UnitOfEnergy
+from homeassistant.const import UnitOfEnergy, UnitOfPower
 from homeassistant.helpers.device_registry import DeviceInfo
 
 if TYPE_CHECKING:
@@ -22,6 +22,17 @@ class HildebrandGlowGasSensorEntityDescription(SensorEntityDescription):
 
 
 ENTITY_DESCRIPTIONS: tuple[HildebrandGlowGasSensorEntityDescription, ...] = (
+    # Real-time power sensor (enabled by default)
+    HildebrandGlowGasSensorEntityDescription(
+        key="gas_power_current",
+        translation_key="gas_power_current",
+        icon="mdi:fire",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        suggested_display_precision=3,
+        data_key="gas_power_current",
+    ),
     # Usage sensors (enabled by default)
     HildebrandGlowGasSensorEntityDescription(
         key="gas_usage_today",

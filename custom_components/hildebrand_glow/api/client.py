@@ -283,6 +283,24 @@ class HildebrandGlowEnergyMonitorApiClient:
         """
         return await self._api_request("get", f"resource/{resource_id}/tariff")
 
+    async def async_get_current(self, resource_id: str) -> dict[str, Any]:
+        """
+        Get current real-time reading for a resource.
+
+        This returns the most recent instantaneous reading from the smart meter,
+        typically used for real-time power monitoring (kW for electricity).
+
+        Args:
+            resource_id: The resource ID.
+
+        Returns:
+            Dictionary containing:
+            - data: List with single [timestamp, value] pair for current reading
+            - units: Unit of measurement
+
+        """
+        return await self._api_request("get", f"resource/{resource_id}/current")
+
     async def async_catchup(self, resource_id: str) -> dict[str, Any]:
         """
         Request DCC to pull latest data for a resource.
@@ -330,6 +348,7 @@ class HildebrandGlowEnergyMonitorApiClient:
                 "virtual_entity": ve,
                 "resources": resources,
                 "readings": {},
+                "current": {},
                 "tariffs": {},
             }
 
@@ -345,6 +364,14 @@ class HildebrandGlowEnergyMonitorApiClient:
 
                 if not resource_id:
                     continue
+
+                # Get current real-time reading (for consumption resources only)
+                if "cost" not in classifier:
+                    try:
+                        current = await self.async_get_current(resource_id)
+                        meter_data["current"][classifier] = current
+                    except HildebrandGlowEnergyMonitorApiClientError:
+                        pass  # Skip if current reading unavailable
 
                 # Get today's readings
                 try:

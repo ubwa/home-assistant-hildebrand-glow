@@ -70,6 +70,9 @@
   },
   "entity": {
     "sensor": {
+      "electricity_power_current": {
+        "name": "Electricity Power"
+      },
       "electricity_usage_today": {
         "name": "Electricity Usage Today"
       },
@@ -93,6 +96,9 @@
       },
       "electricity_standing_charge": {
         "name": "Electricity Standing Charge"
+      },
+      "gas_power_current": {
+        "name": "Gas Power"
       },
       "gas_usage_today": {
         "name": "Gas Usage Today"

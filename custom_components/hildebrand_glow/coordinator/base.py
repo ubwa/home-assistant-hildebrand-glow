@@ -111,6 +111,7 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
         for meter_id, meter_data in meters.items():
             ve = meter_data.get("virtual_entity", {})
             readings = meter_data.get("readings", {})
+            current = meter_data.get("current", {})
             tariffs = meter_data.get("tariffs", {})
             resources = meter_data.get("resources", [])
 
@@ -135,6 +136,11 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
                 "model": model,
                 "has_electricity": has_electricity,
                 "has_gas": has_gas,
+                # Real-time power data (kW)
+                "electricity_power_current": self._extract_current_power(
+                    current.get(CLASSIFIER_ELECTRICITY_CONSUMPTION)
+                ),
+                "gas_power_current": self._extract_current_power(current.get(CLASSIFIER_GAS_CONSUMPTION)),
                 # Electricity data
                 "electricity_usage_today": self._extract_reading_value(
                     readings.get(f"{CLASSIFIER_ELECTRICITY_CONSUMPTION}_today")
@@ -259,3 +265,34 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
         current_rates = data[0].get("currentRates", {}) if data else {}
         charge = current_rates.get("standingCharge")
         return round(charge, 2) if charge is not None else None
+
+    def _extract_current_power(self, current_data: dict[str, Any] | None) -> float | None:
+        """
+        Extract the current power value from current reading response.
+
+        The API returns instantaneous power in Watts, we convert to kW.
+
+        Args:
+            current_data: The current reading response from the API.
+
+        Returns:
+            The current power in kW, or None if unavailable.
+        """
+        if not current_data:
+            return None
+
+        data = current_data.get("data", [])
+        if not data:
+            return None
+
+        # Get the most recent reading (last item is [timestamp, value])
+        latest = data[-1] if data else None
+        if not latest or len(latest) < 2:
+            return None
+
+        value = latest[1]
+        if value is None:
+            return None
+
+        # API returns Watts, convert to kW
+        return round(value / 1000.0, 3)

@@ -39,12 +39,12 @@
         "title": "Configure Integration Options",
         "description": "Customize how this integration operates.",
         "data": {
-          "update_interval_hours": "Update interval (hours)",
+          "update_interval_minutes": "Update interval (minutes)",
           "enable_debugging": "Enable debug logging",
           "custom_icon": "Custom icon (optional)"
         },
         "data_description": {
-          "update_interval_hours": "How often to refresh data from the API (0.25 to 24 hours)",
+          "update_interval_minutes": "How often to poll the API for new data (1 to 60 minutes)",
           "enable_debugging": "Enable detailed debug logging for troubleshooting",
           "custom_icon": "Override the default icon for entities (optional)"
         }
@@ -117,6 +117,9 @@
       },
       "gas_standing_charge": {
         "name": "Gas Standing Charge"
+      },
+      "last_updated": {
+        "name": "Last Updated"
       }
     }
   },

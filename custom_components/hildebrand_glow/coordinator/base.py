@@ -25,13 +25,13 @@ from custom_components.hildebrand_glow.const import (
     LOGGER,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import TimestampDataUpdateCoordinator, UpdateFailed
 
 if TYPE_CHECKING:
     from custom_components.hildebrand_glow.data import HildebrandGlowEnergyMonitorConfigEntry
 
 
-class HildebrandGlowEnergyMonitorDataUpdateCoordinator(DataUpdateCoordinator):
+class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordinator):
     """
     Class to manage fetching data from the Glowmarkt API.
 

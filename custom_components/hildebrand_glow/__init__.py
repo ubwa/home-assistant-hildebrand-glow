@@ -27,7 +27,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import HildebrandGlowEnergyMonitorApiClient
-from .const import DOMAIN, LOGGER
+from .const import DEFAULT_UPDATE_INTERVAL_MINUTES, DOMAIN, LOGGER
 from .coordinator import HildebrandGlowEnergyMonitorDataUpdateCoordinator
 from .data import HildebrandGlowEnergyMonitorData
 from .service_actions import async_setup_services
@@ -113,13 +113,16 @@ async def async_setup_entry(
         session=async_get_clientsession(hass),
     )
 
+    # Get update interval from options (or use default)
+    update_interval_minutes = entry.options.get("update_interval_minutes", DEFAULT_UPDATE_INTERVAL_MINUTES)
+
     # Initialize coordinator with config_entry
     coordinator = HildebrandGlowEnergyMonitorDataUpdateCoordinator(
         hass=hass,
         logger=LOGGER,
         name=DOMAIN,
         config_entry=entry,
-        update_interval=timedelta(minutes=5),  # Poll every 5 minutes for energy data
+        update_interval=timedelta(minutes=update_interval_minutes),
         always_update=False,  # Only update entities when data actually changes
     )
 
@@ -170,16 +173,30 @@ async def async_reload_entry(
     entry: HildebrandGlowEnergyMonitorConfigEntry,
 ) -> None:
     """
-    Reload config entry.
+    Handle config entry options update.
 
-    This is called when the integration configuration or options have changed.
-    It unloads and then reloads the integration with the new configuration.
+    This is called when the integration options have changed.
+    For update_interval changes, we update the coordinator directly.
+    For other changes, we reload the full integration.
 
     Args:
         hass: The Home Assistant instance.
-        entry: The config entry being reloaded.
+        entry: The config entry being updated.
 
     For more information:
     https://developers.home-assistant.io/docs/config_entries_index/#reloading-entries
     """
-    await hass.config_entries.async_reload(entry.entry_id)
+    # Update coordinator's update interval from options
+    update_interval_minutes = entry.options.get("update_interval_minutes", DEFAULT_UPDATE_INTERVAL_MINUTES)
+    new_interval = timedelta(minutes=update_interval_minutes)
+
+    coordinator = entry.runtime_data.coordinator
+    if coordinator.update_interval != new_interval:
+        LOGGER.debug(
+            "Updating poll interval from %s to %s",
+            coordinator.update_interval,
+            new_interval,
+        )
+        coordinator.update_interval = new_interval
+        # Request an immediate refresh with the new interval
+        await coordinator.async_request_refresh()

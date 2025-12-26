@@ -59,7 +59,7 @@ ENTITY_DESCRIPTIONS: tuple[HildebrandGlowElectricitySensorEntityDescription, ...
         translation_key="electricity_cost_today",
         icon="mdi:currency-gbp",
         device_class=SensorDeviceClass.MONETARY,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
         native_unit_of_measurement="GBP",
         suggested_display_precision=2,
         data_key="electricity_cost_today",

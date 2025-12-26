@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from custom_components.hildebrand_glow.const import DOMAIN, PARALLEL_UPDATES as PARALLEL_UPDATES
 from homeassistant.helpers.device_registry import DeviceInfo
 
+from .diagnostic import ENTITY_DESCRIPTIONS as DIAGNOSTIC_DESCRIPTIONS, HildebrandGlowDiagnosticSensor
 from .electricity import ENTITY_DESCRIPTIONS as ELECTRICITY_DESCRIPTIONS, HildebrandGlowElectricitySensor
 from .gas import ENTITY_DESCRIPTIONS as GAS_DESCRIPTIONS, HildebrandGlowGasSensor
 from .tariff import ENTITY_DESCRIPTIONS as TARIFF_DESCRIPTIONS, HildebrandGlowTariffSensor
@@ -85,5 +86,16 @@ async def async_setup_entry(
                 for description in TARIFF_DESCRIPTIONS
                 if description.energy_type == "gas"
             )
+
+        # Add diagnostic sensors for each meter
+        entities.extend(
+            HildebrandGlowDiagnosticSensor(
+                coordinator=coordinator,
+                entity_description=description,
+                meter_id=meter_id,
+                device_info=device_info,
+            )
+            for description in DIAGNOSTIC_DESCRIPTIONS
+        )
 
     async_add_entities(entities)

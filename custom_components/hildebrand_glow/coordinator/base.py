@@ -75,8 +75,11 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
             UpdateFailed: If data fetching fails for other reasons.
         """
         try:
+            LOGGER.debug("Fetching energy data from Glowmarkt API")
             raw_data = await self.config_entry.runtime_data.client.async_get_data()
-            return self._transform_data(raw_data)
+            LOGGER.debug("Raw data received, transforming for entities")
+            transformed = self._transform_data(raw_data)
+            LOGGER.debug("Data transformation complete, %d meters found", len(transformed.get("meters", {})))
         except HildebrandGlowEnergyMonitorApiClientAuthenticationError as exception:
             LOGGER.warning("Authentication error - %s", exception)
             raise ConfigEntryAuthFailed(
@@ -89,6 +92,8 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
                 translation_domain="hildebrand_glow",
                 translation_key="update_failed",
             ) from exception
+        else:
+            return transformed
 
     def _transform_data(self, raw_data: dict[str, Any]) -> dict[str, Any]:
         """
@@ -183,6 +188,15 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
                     self._extract_standing_charge(tariffs.get(CLASSIFIER_GAS_CONSUMPTION))
                 ),
             }
+
+            LOGGER.debug(
+                "Meter %s: electricity_power=%s kW, gas_power=%s kW, electricity_today=%s kWh, gas_today=%s kWh",
+                meter_id,
+                meter_transformed.get("electricity_power_current"),
+                meter_transformed.get("gas_power_current"),
+                meter_transformed.get("electricity_usage_today"),
+                meter_transformed.get("gas_usage_today"),
+            )
 
             transformed["meters"][meter_id] = meter_transformed
 
@@ -281,18 +295,30 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
             The current power in kW, or None if unavailable.
         """
         if not current_data:
+            LOGGER.debug("No current data provided for power extraction")
             return None
 
         data = current_data.get("data", [])
         if not data:
+            LOGGER.debug("No data points in current readings")
             return None
 
+        LOGGER.debug("Processing %d PT1M data points for current power", len(data))
+
         # Find the most recent non-null reading (iterate backwards)
-        for reading in reversed(data):
+        for i, reading in enumerate(reversed(data)):
             if len(reading) >= 2 and reading[1] is not None:
                 value = reading[1]
                 # PT1M returns kWh consumed in that minute
                 # Convert to kW: multiply by 60 (60 minutes = 1 hour)
-                return round(value * 60, 3)
+                power_kw = round(value * 60, 3)
+                LOGGER.debug(
+                    "Found valid reading at position -%d: %s kWh/min = %s kW",
+                    i + 1,
+                    value,
+                    power_kw,
+                )
+                return power_kw
 
+        LOGGER.debug("No valid readings found in PT1M data")
         return None

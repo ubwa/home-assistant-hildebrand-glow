@@ -16,7 +16,7 @@ from typing import Any
 
 import aiohttp
 
-from custom_components.hildebrand_glow.const import API_URL, APPLICATION_ID
+from custom_components.hildebrand_glow.const import API_URL, APPLICATION_ID, LOGGER
 
 
 class HildebrandGlowEnergyMonitorApiClientError(Exception):
@@ -84,6 +84,7 @@ class HildebrandGlowEnergyMonitorApiClient:
 
         """
         try:
+            LOGGER.debug("Authenticating with Glowmarkt API for user: %s", self._username)
             async with asyncio.timeout(10):
                 response = await self._session.post(
                     f"{API_URL}/auth",
@@ -96,6 +97,8 @@ class HildebrandGlowEnergyMonitorApiClient:
                         "password": self._password,
                     },
                 )
+
+                LOGGER.debug("Auth response status: %s", response.status)
 
                 if response.status in (401, 403):
                     msg = "Invalid credentials"
@@ -113,6 +116,7 @@ class HildebrandGlowEnergyMonitorApiClient:
                     msg = "Authentication failed: no token received"
                     raise HildebrandGlowEnergyMonitorApiClientAuthenticationError(msg)  # noqa: TRY301
 
+                LOGGER.debug("Authentication successful, token obtained")
                 return self._token
 
         except HildebrandGlowEnergyMonitorApiClientAuthenticationError:
@@ -165,6 +169,7 @@ class HildebrandGlowEnergyMonitorApiClient:
         await self._ensure_authenticated()
 
         try:
+            LOGGER.debug("API request: %s %s params=%s", method.upper(), endpoint, params)
             async with asyncio.timeout(30):
                 response = await self._session.request(
                     method=method,
@@ -174,8 +179,11 @@ class HildebrandGlowEnergyMonitorApiClient:
                     json=data,
                 )
 
+                LOGGER.debug("API response status: %s for %s", response.status, endpoint)
+
                 if response.status in (401, 403):
                     # Token may have expired, try re-authenticating
+                    LOGGER.debug("Token expired, re-authenticating...")
                     self._token = None
                     await self.async_authenticate()
                     # Retry the request
@@ -191,7 +199,11 @@ class HildebrandGlowEnergyMonitorApiClient:
                         raise HildebrandGlowEnergyMonitorApiClientAuthenticationError(msg)  # noqa: TRY301
 
                 response.raise_for_status()
-                return await response.json()
+                result = await response.json()
+                LOGGER.debug(
+                    "API response for %s: %s items", endpoint, len(result) if isinstance(result, list) else "dict"
+                )
+                return result
 
         except HildebrandGlowEnergyMonitorApiClientAuthenticationError:
             raise
@@ -342,7 +354,9 @@ class HildebrandGlowEnergyMonitorApiClient:
             if not ve_id:
                 continue
 
+            LOGGER.debug("Processing virtual entity: %s", ve_id)
             resources = await self.async_get_resources(ve_id)
+            LOGGER.debug("Found %d resources for %s", len(resources), ve_id)
 
             meter_data: dict[str, Any] = {
                 "virtual_entity": ve,
@@ -365,11 +379,19 @@ class HildebrandGlowEnergyMonitorApiClient:
                 if not resource_id:
                     continue
 
+                LOGGER.debug("Fetching data for resource: %s (%s)", resource_id, classifier)
+
                 # Get current/recent reading using PT1M resolution (for consumption resources only)
                 if "cost" not in classifier:
                     try:
                         # Use readings endpoint with 1-minute resolution for last 5 minutes
                         recent_start = now - timedelta(minutes=5)
+                        LOGGER.debug(
+                            "Fetching PT1M readings for %s from %s to %s",
+                            classifier,
+                            recent_start.isoformat(),
+                            now.isoformat(),
+                        )
                         current = await self.async_get_readings(
                             resource_id,
                             recent_start,
@@ -377,8 +399,10 @@ class HildebrandGlowEnergyMonitorApiClient:
                             period="PT1M",
                         )
                         meter_data["current"][classifier] = current
-                    except HildebrandGlowEnergyMonitorApiClientError:
-                        pass  # Skip if current reading unavailable
+                        data_points = len(current.get("data", []))
+                        LOGGER.debug("PT1M readings for %s: %d data points", classifier, data_points)
+                    except HildebrandGlowEnergyMonitorApiClientError as err:
+                        LOGGER.debug("Failed to get PT1M readings for %s: %s", classifier, err)
 
                 # Get today's readings
                 try:

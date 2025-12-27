@@ -48,8 +48,12 @@ class HildebrandGlowEnergyMonitorApiClient:
         _password: The password for Glowmarkt account.
         _session: The aiohttp ClientSession for making requests.
         _token: The authentication token from the API.
+        _token_expiry: When the token expires (UTC).
 
     """
+
+    # Token validity period (Glowmarkt tokens typically last 1 hour, refresh 5 min before)
+    TOKEN_LIFETIME_SECONDS = 55 * 60  # 55 minutes
 
     def __init__(
         self,
@@ -70,6 +74,7 @@ class HildebrandGlowEnergyMonitorApiClient:
         self._password = password
         self._session = session
         self._token: str | None = None
+        self._token_expiry: datetime | None = None
 
     async def async_authenticate(self) -> str:
         """
@@ -116,7 +121,12 @@ class HildebrandGlowEnergyMonitorApiClient:
                     msg = "Authentication failed: no token received"
                     raise HildebrandGlowEnergyMonitorApiClientAuthenticationError(msg)  # noqa: TRY301
 
-                LOGGER.debug("Authentication successful, token obtained")
+                # Set token expiry time
+                self._token_expiry = datetime.now(tz=UTC) + timedelta(seconds=self.TOKEN_LIFETIME_SECONDS)
+                LOGGER.debug(
+                    "Authentication successful, token obtained (expires at %s)",
+                    self._token_expiry.isoformat(),
+                )
                 return self._token
 
         except HildebrandGlowEnergyMonitorApiClientAuthenticationError:
@@ -128,9 +138,17 @@ class HildebrandGlowEnergyMonitorApiClient:
             msg = f"Communication error during authentication - {exception}"
             raise HildebrandGlowEnergyMonitorApiClientCommunicationError(msg) from exception
 
+    def _is_token_expired(self) -> bool:
+        """Check if the current token is expired or about to expire."""
+        if not self._token or not self._token_expiry:
+            return True
+        # Consider expired if less than 1 minute remaining
+        return datetime.now(tz=UTC) >= self._token_expiry - timedelta(minutes=1)
+
     async def _ensure_authenticated(self) -> None:
         """Ensure we have a valid authentication token."""
-        if not self._token:
+        if self._is_token_expired():
+            LOGGER.debug("Token missing or expired, authenticating...")
             await self.async_authenticate()
 
     def _get_auth_headers(self) -> dict[str, str]:

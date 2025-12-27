@@ -365,10 +365,17 @@ class HildebrandGlowEnergyMonitorApiClient:
                 if not resource_id:
                     continue
 
-                # Get current real-time reading (for consumption resources only)
+                # Get current/recent reading using PT1M resolution (for consumption resources only)
                 if "cost" not in classifier:
                     try:
-                        current = await self.async_get_current(resource_id)
+                        # Use readings endpoint with 1-minute resolution for last 5 minutes
+                        recent_start = now - timedelta(minutes=5)
+                        current = await self.async_get_readings(
+                            resource_id,
+                            recent_start,
+                            now,
+                            period="PT1M",
+                        )
                         meter_data["current"][classifier] = current
                     except HildebrandGlowEnergyMonitorApiClientError:
                         pass  # Skip if current reading unavailable

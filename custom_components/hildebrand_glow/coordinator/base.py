@@ -268,12 +268,14 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
 
     def _extract_current_power(self, current_data: dict[str, Any] | None) -> float | None:
         """
-        Extract the current power value from current reading response.
+        Extract the current power value from PT1M readings response.
 
-        The API returns instantaneous power in Watts, we convert to kW.
+        Uses the most recent non-null reading from the last 5 minutes of data.
+        The API returns energy consumption per minute in kWh, which we convert
+        to instantaneous power in kW (multiply by 60 since it's per minute).
 
         Args:
-            current_data: The current reading response from the API.
+            current_data: The readings response from the API with PT1M resolution.
 
         Returns:
             The current power in kW, or None if unavailable.
@@ -285,14 +287,12 @@ class HildebrandGlowEnergyMonitorDataUpdateCoordinator(TimestampDataUpdateCoordi
         if not data:
             return None
 
-        # Get the most recent reading (last item is [timestamp, value])
-        latest = data[-1] if data else None
-        if not latest or len(latest) < 2:
-            return None
+        # Find the most recent non-null reading (iterate backwards)
+        for reading in reversed(data):
+            if len(reading) >= 2 and reading[1] is not None:
+                value = reading[1]
+                # PT1M returns kWh consumed in that minute
+                # Convert to kW: multiply by 60 (60 minutes = 1 hour)
+                return round(value * 60, 3)
 
-        value = latest[1]
-        if value is None:
-            return None
-
-        # API returns Watts, convert to kW
-        return round(value / 1000.0, 3)
+        return None
